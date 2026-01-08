@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Bell, Calendar } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { usePRMStore } from "../store";
 import { ReminderCard } from "../components/reminders";
 

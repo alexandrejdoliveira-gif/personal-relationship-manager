@@ -1,5 +1,5 @@
 import { getDatabase, generateId } from "./database";
-import type { Reminder, ReminderType, ActionType, Contact } from "../types";
+import type { Reminder, Contact } from "../types";
 import { getContactById } from "./contacts";
 import { getDaysSinceLastInteraction } from "./interactions";
 

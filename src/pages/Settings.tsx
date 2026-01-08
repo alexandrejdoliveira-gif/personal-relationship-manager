@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Download, Upload, Trash2, Shield, Moon, Info } from "lucide-react";
+import { Bell, Download, Upload, Trash2, Shield, Info } from "lucide-react";
 import { requestNotificationPermission, checkNotificationPermission } from "../services/notifications";
 import { getDatabase } from "../services/database";
 

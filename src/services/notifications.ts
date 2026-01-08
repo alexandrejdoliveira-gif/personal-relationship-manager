@@ -157,9 +157,8 @@ export async function showNotification(reminder: Reminder): Promise<boolean> {
             icon: notificationData.icon,
             tag: notificationData.tag,
             data: notificationData.data,
-            actions: notificationData.actions,
             requireInteraction: true,
-        });
+        } as NotificationOptions);
         return true;
     } catch (error) {
         // Fallback to basic notification

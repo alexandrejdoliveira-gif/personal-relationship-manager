@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import type { Contact, RelationshipType } from "../../types";
 import { usePRMStore } from "../../store";
 
@@ -10,10 +10,10 @@ interface ContactFormProps {
 }
 
 const RELATIONSHIP_OPTIONS: { value: RelationshipType; label: string }[] = [
+    { value: "spouse", label: "Spouse" },
     { value: "parent", label: "Parent" },
     { value: "sibling", label: "Sibling" },
     { value: "child", label: "Child" },
-    { value: "spouse", label: "Spouse" },
     { value: "grandparent", label: "Grandparent" },
     { value: "cousin", label: "Cousin" },
     { value: "uncle_aunt", label: "Uncle/Aunt" },
@@ -22,25 +22,20 @@ const RELATIONSHIP_OPTIONS: { value: RelationshipType; label: string }[] = [
     { value: "acquaintance", label: "Acquaintance" },
 ];
 
-const CATEGORY_OPTIONS = ["Family", "Friends", "Professional", "Other"];
-
 export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
     const { addContact, updateContact } = usePRMStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         name: contact?.name || "",
-        nickname: contact?.nickname || "",
-        relationship: contact?.relationship || ("friend" as RelationshipType),
-        category: contact?.category || "Friends",
+        relationship: contact?.relationship || ("spouse" as RelationshipType),
         phone: contact?.phones[0]?.number || "",
-        email: contact?.emails[0] || "",
         birthday: contact?.birthday || "",
         notes: contact?.notes || "",
-        reminderEnabled: contact?.reminderConfig.enabled ?? true,
-        reminderInterval: contact?.reminderConfig.intervalDays || 30,
+        reminderInterval: contact?.reminderConfig.intervalDays || 1,
         // Address fields
         street: contact?.addresses[0]?.street || "",
+        aptUnit: "",
         city: contact?.addresses[0]?.city || "",
         state: contact?.addresses[0]?.state || "",
         postalCode: contact?.addresses[0]?.postalCode || "",
@@ -54,18 +49,20 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
         try {
             const contactData = {
                 name: formData.name,
-                nickname: formData.nickname || undefined,
+                nickname: undefined,
                 relationship: formData.relationship,
-                category: formData.category,
+                category: "Family",
                 phones: formData.phone
                     ? [{ label: "Mobile", number: formData.phone, isPrimary: true }]
                     : [],
-                emails: formData.email ? [formData.email] : [],
+                emails: [],
                 addresses: formData.street
                     ? [
                         {
                             label: "Home",
-                            street: formData.street,
+                            street: formData.aptUnit
+                                ? `${formData.street}, ${formData.aptUnit}`
+                                : formData.street,
                             city: formData.city,
                             state: formData.state,
                             postalCode: formData.postalCode,
@@ -77,7 +74,7 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
                 customDates: [],
                 notes: formData.notes,
                 reminderConfig: {
-                    enabled: formData.reminderEnabled,
+                    enabled: true,
                     intervalDays: formData.reminderInterval,
                     preferredTime: "09:00",
                 },
@@ -101,19 +98,27 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2 className="modal-title">
-                        {contact ? "Edit Contact" : "New Contact"}
-                    </h2>
-                    <button className="btn btn-ghost btn-icon" onClick={onClose}>
-                        <X size={20} />
-                    </button>
+                <div className="modal-header-enhanced">
+                    <div className="flex items-center" style={{ gap: "var(--space-md)" }}>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-icon"
+                            onClick={onClose}
+                            aria-label="Go back"
+                        >
+                            <ArrowLeft size={20} />
+                        </button>
+                        <h2 className="modal-title">
+                            {contact ? "Edit Contact" : "New Contact"}
+                        </h2>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
+                        {/* Name */}
                         <div className="form-group">
-                            <label className="form-label">Name *</label>
+                            <label className="form-label">Name</label>
                             <input
                                 type="text"
                                 className="form-input"
@@ -124,19 +129,32 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
                             />
                         </div>
 
+                        {/* Phone Number */}
                         <div className="form-group">
-                            <label className="form-label">Nickname</label>
+                            <label className="form-label">Phone Number</label>
                             <input
-                                type="text"
+                                type="tel"
                                 className="form-input"
-                                value={formData.nickname}
-                                onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             />
                         </div>
 
-                        <div className="grid grid-2">
+                        {/* Date of Birth */}
+                        <div className="form-group">
+                            <label className="form-label">Date of Birth</label>
+                            <input
+                                type="date"
+                                className="form-input"
+                                value={formData.birthday}
+                                onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                            />
+                        </div>
+
+                        {/* Relation + Frequency */}
+                        <div className="grid grid-2" style={{ gap: "var(--space-md)" }}>
                             <div className="form-group">
-                                <label className="form-label">Relationship</label>
+                                <label className="form-label">Relation</label>
                                 <select
                                     className="form-input form-select"
                                     value={formData.relationship}
@@ -153,65 +171,49 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Category</label>
-                                <select
-                                    className="form-input form-select"
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                >
-                                    {CATEGORY_OPTIONS.map((cat) => (
-                                        <option key={cat} value={cat}>
-                                            {cat}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-2">
-                            <div className="form-group">
-                                <label className="form-label">Phone</label>
+                                <label className="form-label">Frequency (Days)</label>
                                 <input
-                                    type="tel"
+                                    type="number"
                                     className="form-input"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+1 (555) 000-0000"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Email</label>
-                                <input
-                                    type="email"
-                                    className="form-input"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    min={1}
+                                    max={365}
+                                    value={formData.reminderInterval}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, reminderInterval: parseInt(e.target.value) || 1 })
+                                    }
                                 />
                             </div>
                         </div>
 
+                        {/* Address Section */}
                         <div className="form-group">
-                            <label className="form-label">Birthday</label>
-                            <input
-                                type="date"
-                                className="form-input"
-                                value={formData.birthday}
-                                onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                            />
-                        </div>
+                            <div className="form-section-header">
+                                <MapPin size={14} />
+                                <span>Address</span>
+                            </div>
 
-                        <div className="form-group">
-                            <label className="form-label">Address</label>
+                            {/* Street */}
                             <input
                                 type="text"
                                 className="form-input"
                                 value={formData.street}
                                 onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                                 placeholder="Street address"
-                                style={{ marginBottom: "8px" }}
+                                style={{ marginBottom: "var(--space-sm)" }}
                             />
-                            <div className="grid grid-2">
+
+                            {/* Apt/Suite/Unit */}
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={formData.aptUnit}
+                                onChange={(e) => setFormData({ ...formData, aptUnit: e.target.value })}
+                                placeholder="Apt, suite, unit (optional)"
+                                style={{ marginBottom: "var(--space-sm)" }}
+                            />
+
+                            {/* City + State */}
+                            <div className="grid grid-2" style={{ gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
                                 <input
                                     type="text"
                                     className="form-input"
@@ -227,8 +229,27 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
                                     placeholder="State"
                                 />
                             </div>
+
+                            {/* Postal Code + Country */}
+                            <div className="grid grid-2" style={{ gap: "var(--space-sm)" }}>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.postalCode}
+                                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                                    placeholder="Postal code"
+                                />
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={formData.country}
+                                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                                    placeholder="Country"
+                                />
+                            </div>
                         </div>
 
+                        {/* Notes */}
                         <div className="form-group">
                             <label className="form-label">Notes</label>
                             <textarea
@@ -238,36 +259,6 @@ export function ContactForm({ contact, onClose, onSave }: ContactFormProps) {
                                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                 placeholder="Personal notes about this contact..."
                             />
-                        </div>
-
-                        <div className="card" style={{ padding: "var(--space-md)" }}>
-                            <div className="flex items-center justify-between" style={{ marginBottom: "var(--space-sm)" }}>
-                                <label className="form-label" style={{ marginBottom: 0 }}>
-                                    Enable Reminders
-                                </label>
-                                <input
-                                    type="checkbox"
-                                    checked={formData.reminderEnabled}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, reminderEnabled: e.target.checked })
-                                    }
-                                />
-                            </div>
-                            {formData.reminderEnabled && (
-                                <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label">Remind every (days)</label>
-                                    <input
-                                        type="number"
-                                        className="form-input"
-                                        min={1}
-                                        max={365}
-                                        value={formData.reminderInterval}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, reminderInterval: parseInt(e.target.value) || 30 })
-                                        }
-                                    />
-                                </div>
-                            )}
                         </div>
                     </div>
 
